@@ -94,9 +94,9 @@ contract Token {
 
         // backtrace verify
         // backtrace to genesis
-        bytes sensibleID = TokenProto.getSensibleID(tokenScript, tokenScriptLen);
+        bytes genesisTxid = TokenProto.getGenesisTxid(tokenScript, tokenScriptLen);
 
-        if (sensibleID[:32] != hash256(prevTokenTxProof.txHeader)) {
+        if (genesisTxid[:32] != hash256(prevTokenTxProof.txHeader)) {
             // backtrace to genesis contract
             bytes genesisHash = TokenProto.getGenesisHash(tokenScript, tokenScriptLen);
             bool backtraceGenesis = (genesisHash == ripemd160(prevTokenTxProof.scriptHash));
@@ -111,7 +111,7 @@ contract Token {
 
         // verify tx and prevTx script
         bytes thisOutpoint = SigHash.outpoint(txPreimage);
-        Backtrace.verify(thisOutpoint, tokenTxHeader, prevTokenInputIndex, prevTokenTxProof, sensibleID, tokenTxInputProof);
+        Backtrace.verify(thisOutpoint, tokenTxHeader, prevTokenInputIndex, prevTokenTxProof, genesisTxid, tokenTxInputProof);
 
         // verify amountCheck contract
         bytes tokenID = TokenProto.getTokenID(tokenScript, tokenScriptLen);

@@ -34,12 +34,12 @@ contract TokenGenesis {
         int tokenValue = TokenProto.getTokenAmount(genesisScript, genesisScriptLen);
         require(tokenValue == 0);
         require(TokenProto.getGenesisHash(genesisScript, genesisScriptLen) == b'0000000000000000000000000000000000000000');
-        bytes sensibleID = TokenProto.getSensibleID(genesisScript, genesisScriptLen);
+        bytes genesisTxid = TokenProto.getGenesisTxid(genesisScript, genesisScriptLen);
         bool isFirst = false;
         bytes thisOutpoint = SigHash.outpoint(txPreimage);
-        if (sensibleID == b'000000000000000000000000000000000000000000000000000000000000000000000000') {
+        if (genesisTxid == b'000000000000000000000000000000000000000000000000000000000000000000000000') {
             isFirst = true;
-            sensibleID = thisOutpoint;
+            genesisTxid = thisOutpoint;
         }
         require(TokenProto.checkProtoHeader(genesisScript, genesisScriptLen));
         // check opreturn
@@ -49,18 +49,19 @@ contract TokenGenesis {
             // backtrace to genesis script
             bytes prevScriptHash = sha256(genesisScript);
             TxOutputProof prevGenesisTxProof = {prevGenesisTxHeader, prevTxOutputHashProof, prevTxOutputSatoshiBytes, prevScriptHash};
-            Backtrace.verify(thisOutpoint, genesisTxHeader, prevInputIndex, prevGenesisTxProof, sensibleID, genesisTxInputProof);
+            Backtrace.verify(thisOutpoint, genesisTxHeader, prevInputIndex, prevGenesisTxProof, genesisTxid, genesisTxInputProof);
         }
 
         // genesisHash
-        bytes newGenesisScript = TokenProto.getNewGenesisScript(genesisScript, genesisScriptLen, sensibleID);
+        bytes newGenesisScript = TokenProto.getNewGenesisScript(genesisScript, genesisScriptLen, genesisTxid);
         bytes genesisHash = hash160(newGenesisScript);
 
-        // check tokenScript oracle data
+        // check tokenScript data
         int tokenScriptLen = len(tokenScript);
 
-        require(sensibleID == TokenProto.getSensibleID(tokenScript, tokenScriptLen));
+        require(genesisTxid == TokenProto.getGenesisTxid(tokenScript, tokenScriptLen));
         require(genesisHash == TokenProto.getGenesisHash(tokenScript, tokenScriptLen));
+        require(TokenProto.getTokenMetaData(genesisScript, genesisScriptLen) == TokenProto.getTokenMetaData(tokenScript, tokenScriptLen));
         // check data part
         require(TokenProto.checkDataLen(tokenScript, tokenScriptLen));
 
