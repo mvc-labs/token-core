@@ -43,7 +43,7 @@ const TOKEN_SYMBOL = Buffer.alloc(TokenProto.TOKEN_SYMBOLE_LEN, 0)
 TOKEN_SYMBOL.write('test')
 const DECIMAL_NUM = Buffer.from('08', 'hex')
 
-let sensibleIDBuf, genesisHash, genesisTx, prevGenesisTx
+let genesisTxidBuf, genesisHash, genesisTx, prevGenesisTx
 
 function createGenesis(sID: Buffer) {
     const genesis = new Genesis()
@@ -54,7 +54,7 @@ function createGenesis(sID: Buffer) {
         issuerAddress.hashBuffer, // address
         Buffer.alloc(8, 0), // token value
         Buffer.alloc(20, 0), // genesisHash
-        sID, // sensibleIDBuf
+        sID, // genesisTxidBuf
         tokenVersion,
         tokenType, // type
         PROTO_FLAG,
@@ -129,7 +129,7 @@ function createToken(genesis, contractData: Buffer, options: any = {}) {
 
     const genesisScript = genesis.lockingScript
     const scriptBuf = genesisScript.toBuffer()
-    const newScriptBuf = TokenProto.getNewGenesisScript(scriptBuf, sensibleIDBuf)
+    const newScriptBuf = TokenProto.getNewGenesisScript(scriptBuf, genesisTxidBuf)
 
     let prevouts = []
 
@@ -179,9 +179,9 @@ describe('Test genesis contract unlock In Javascript', () => {
         addInput(genesisTx, prevGenesisTx.id, 0, prevGenesisTx.outputs[0].script, inputSatoshis, prevouts)
         addOutput(genesisTx, genesis.lockingScript, inputSatoshis)
 
-        sensibleIDBuf = Buffer.from(Common.genSensibleID(genesisTx.id, 0), 'hex')
+        genesisTxidBuf = Buffer.from(Common.genGenesisTxid(genesisTx.id, 0), 'hex')
 
-        const newScriptBuf = TokenProto.getNewGenesisScript(scriptBuf, sensibleIDBuf)
+        const newScriptBuf = TokenProto.getNewGenesisScript(scriptBuf, genesisTxidBuf)
         genesisHash = Common.getScriptHashBuf(newScriptBuf)
 
         let contractData = Buffer.concat([
@@ -191,7 +191,7 @@ describe('Test genesis contract unlock In Javascript', () => {
             address1.hashBuffer,
             buffValue,
             genesisHash,
-            sensibleIDBuf,
+            genesisTxidBuf,
             tokenVersion,
             tokenType, // type
             PROTO_FLAG,
@@ -214,13 +214,13 @@ describe('Test genesis contract unlock In Javascript', () => {
             address1.hashBuffer,
             buffValue,
             genesisHash,
-            sensibleIDBuf,
+            genesisTxidBuf,
             tokenVersion,
             tokenType, // type
             PROTO_FLAG,
         ])
         // issue again
-        const genesis = createGenesis(sensibleIDBuf)
+        const genesis = createGenesis(genesisTxidBuf)
         let tx = createToken(genesis, contractData)
 
         prevGenesisTx = genesisTx
@@ -240,10 +240,10 @@ describe('Test genesis contract unlock In Javascript', () => {
             address1.hashBuffer,
             buffValue,
             genesisHash,
-            sensibleIDBuf,
+            genesisTxidBuf,
             Buffer.alloc(1, 0),
         ])
-        const genesis = createGenesis(sensibleIDBuf)
+        const genesis = createGenesis(genesisTxidBuf)
         createToken(genesis, contractData, { expected: false })
     })
 
@@ -258,9 +258,9 @@ describe('Test genesis contract unlock In Javascript', () => {
             address1.hashBuffer,
             buffValue,
             genesisHash,
-            Buffer.alloc(sensibleIDBuf.length, 0), // script code hash
+            Buffer.alloc(genesisTxidBuf.length, 0), // script code hash
         ])
-        const genesis = createGenesis(sensibleIDBuf)
+        const genesis = createGenesis(genesisTxidBuf)
         createToken(genesis, contractData, { expected: false })
     });
 
@@ -275,9 +275,9 @@ describe('Test genesis contract unlock In Javascript', () => {
             address1.hashBuffer,
             buffValue,
             Buffer.alloc(20, 0), // genesisHash
-            sensibleIDBuf,
+            genesisTxidBuf,
         ])
-        const genesis = createGenesis(sensibleIDBuf)
+        const genesis = createGenesis(genesisTxidBuf)
         createToken(genesis, contractData, { expected: false })
     });
 
@@ -289,12 +289,12 @@ describe('Test genesis contract unlock In Javascript', () => {
             address1.hashBuffer,
             buffValue,
             genesisHash,
-            sensibleIDBuf,
+            genesisTxidBuf,
             tokenVersion,
             tokenType, // type
             PROTO_FLAG,
         ])
-        const genesis = createGenesis(sensibleIDBuf)
+        const genesis = createGenesis(genesisTxidBuf)
         createToken(genesis, contractData, { wrongVersion: true, expected: false })
     });
 });

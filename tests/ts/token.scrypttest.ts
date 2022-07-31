@@ -17,7 +17,7 @@ const sigtype = Common.SIG_HASH_ALL
 const issuerAddress = privateKey.toAddress()
 const address1 = privateKey.toAddress()
 const address2 = privateKey2.toAddress()
-const sensibleID = Buffer.concat([
+const genesisTxid = Buffer.concat([
     Common.getTxIdBuf(dummyTxId),
     Common.getUInt32Buf(0)
 ])
@@ -57,12 +57,12 @@ function initContractHash() {
     const unlockContractCodeHash = new Bytes(Common.getScriptHashBuf(code).toString('hex'))
     unlockContractCodeHashArray = [unlockContractCodeHash, unlockContractCodeHash, unlockContractCodeHash, unlockContractCodeHash, unlockContractCodeHash]
 
-    const genesis = Utils.createGenesisContract(Genesis, issuerAddress, sensibleID)
+    const genesis = Utils.createGenesisContract(Genesis, issuerAddress, genesisTxid)
     genesisScriptBuf = genesis.lockingScript.toBuffer()
     genesisHash = Common.getScriptHashBuf(genesisScriptBuf)
     const tokenIDData = Buffer.concat([
         genesisHash,
-        sensibleID,
+        genesisTxid,
     ])
     tokenID = mvc.crypto.Hash.sha256ripemd160(tokenIDData)
     //console.log("genesisHash:", genesisHash)
@@ -73,7 +73,7 @@ function initContractHash() {
 }
 
 function createTokenContract(addressBuf: Buffer, amount: bigint) {
-    return Utils.createTokenContract(Token, addressBuf, amount, genesisHash, sensibleID, transferCheckCodeHashArray, unlockContractCodeHashArray)
+    return Utils.createTokenContract(Token, addressBuf, amount, genesisHash, genesisTxid, transferCheckCodeHashArray, unlockContractCodeHashArray)
 }
 
 function createTransferCheckContract(nTokenInputs, nOutputs, outputTokenArray, tid = tokenID, tcHash = tokenCodeHash) {
@@ -681,8 +681,8 @@ function unlockFromGenesis(options: any = {}) {
     addInput(genesisTx, prevGenesisTx.id, 0, genesis.lockingScript, inputSatoshis, [])
 
     // create genesis output
-    const sensibleID = Common.genSensibleID(prevGenesisTx.id, 0)
-    const newGenesisScript = TokenProto.getNewGenesisScript(genesisScript, Buffer.from(sensibleID, 'hex'))
+    const genesisTxid = Common.genGenesisTxid(prevGenesisTx.id, 0)
+    const newGenesisScript = TokenProto.getNewGenesisScript(genesisScript, Buffer.from(genesisTxid, 'hex'))
     addOutput(genesisTx, mvc.Script.fromBuffer(newGenesisScript), inputSatoshis)
 
     const tokenAmount = BigInt(10000)
@@ -692,7 +692,7 @@ function unlockFromGenesis(options: any = {}) {
     }
 
     // create token output
-    const token = Utils.createTokenContract(Token, address1.hashBuffer, tokenAmount, genesisHash, Buffer.from(sensibleID, 'hex'), transferCheckCodeHashArray, unlockContractCodeHashArray)
+    const token = Utils.createTokenContract(Token, address1.hashBuffer, tokenAmount, genesisHash, Buffer.from(genesisTxid, 'hex'), transferCheckCodeHashArray, unlockContractCodeHashArray)
     addOutput(genesisTx, token.lockingScript, inputSatoshis)
 
     const tokenID = TokenProto.getTokenID(token.lockingScript.toBuffer())
@@ -715,7 +715,7 @@ function unlockFromGenesis(options: any = {}) {
     let pubKeyHex = toHex(privateKey.publicKey)
     let sigHex = toHex(signTx(tx, privateKey, token.lockingScript, inputSatoshis, 0, sigtype))
 
-    // unlock by sensibleID
+    // unlock by genesisTxid
     unlockTokenContract(tx, prevouts, token, 0, 0, genesisTx, 1, 0, prevGenesisTx, 0, amountCheckHashIndex, amountCheckInputIndex, amountCheckTx, 0, 0, '', 0, pubKeyHex, sigHex, TokenProto.OP_TRANSFER, true)
 
     // unlock by genesisHash

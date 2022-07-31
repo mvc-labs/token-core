@@ -12,7 +12,7 @@ const TOKEN_SYMBOL = Buffer.alloc(TokenProto.TOKEN_SYMBOLE_LEN, 0)
 TOKEN_SYMBOL.write('test')
 const DECIMAL_NUM = Buffer.from('08', 'hex')
 
-export function createGenesisContract(genesisClass, issuerAddress: mvc.Address, sensibleID: Buffer) {
+export function createGenesisContract(genesisClass, issuerAddress: mvc.Address, genesisTxid: Buffer) {
     const genesis = new genesisClass()
     const contractData = Buffer.concat([
         TOKEN_NAME,
@@ -21,7 +21,7 @@ export function createGenesisContract(genesisClass, issuerAddress: mvc.Address, 
         issuerAddress.hashBuffer, // address
         Buffer.alloc(8, 0), // token value
         Buffer.alloc(20, 0), // genesisHash
-        sensibleID, // sensibleID
+        genesisTxid, // genesisTxid
         tokenVersion,
         tokenType, // type
         PROTO_FLAG,
@@ -36,7 +36,7 @@ export function createTokenContract(
     addressBuf: Buffer, 
     amount: bigint, 
     genesisHash: Buffer, 
-    sensibleID: Buffer, 
+    genesisTxid: Buffer, 
     transferCheckCodeHashArray, 
     unlockContractCodeHashArray
     ) {
@@ -48,7 +48,7 @@ export function createTokenContract(
         addressBuf,
         Common.getUInt64Buf(amount),
         genesisHash, // genesisHash
-        sensibleID, // sensibleID
+        genesisTxid, // genesisTxid
         tokenVersion,
         tokenType, // type
         PROTO_FLAG,

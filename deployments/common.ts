@@ -281,7 +281,7 @@ export const getOutpoint = function(txid: string, index: number) {
     ])
 }
 
-export const genSensibleID = function (txid: string, index: number) {
+export const genGenesisTxid = function (txid: string, index: number) {
     return Buffer.concat([
         getTxIdBuf(txid),
         getUInt32Buf(index),

@@ -12,8 +12,8 @@ export const TOKEN_SYMBOLE_LEN = 20;
 export const TOKEN_NAME_LEN = 40;
 
 export const OP_PUSH_LEN = 2;
-export const SENSIBLE_ID_OFFSET = ProtoHeader.PROTO_HEADER_OFFSET + ProtoHeader.SENSIBLE_ID_LEN;
-export const GENESIS_HASH_OFFSET = SENSIBLE_ID_OFFSET + ProtoHeader.HASH_LEN;
+export const GENESISTX_ID_OFFSET = ProtoHeader.PROTO_HEADER_OFFSET + ProtoHeader.GENESISTX_ID_LEN;
+export const GENESIS_HASH_OFFSET = GENESISTX_ID_OFFSET + ProtoHeader.HASH_LEN;
 export const TOKEN_AMOUNT_OFFSET = GENESIS_HASH_OFFSET + ProtoHeader.AMOUNT_LEN;
 export const TOKEN_ADDRESS_OFFSET = TOKEN_AMOUNT_OFFSET + ProtoHeader.ADDRESS_LEN;
 export const TOKEN_DECIMAL_OFFSET = TOKEN_ADDRESS_OFFSET + TOKEN_DECIMAL_LEN;
@@ -31,15 +31,15 @@ export function getTokenAmount(script: Buffer) {
 }
 
 export function getTokenID (script: Buffer) {
-    return mvc.crypto.Hash.sha256ripemd160(script.subarray(script.length - GENESIS_HASH_OFFSET, script.length - SENSIBLE_ID_OFFSET + ProtoHeader.SENSIBLE_ID_LEN))
+    return mvc.crypto.Hash.sha256ripemd160(script.subarray(script.length - GENESIS_HASH_OFFSET, script.length - GENESISTX_ID_OFFSET + ProtoHeader.GENESISTX_ID_LEN))
 }
 
-export function getSensibleID(script: Buffer) {
-    return script.subarray(script.length - SENSIBLE_ID_OFFSET, script.length - SENSIBLE_ID_OFFSET + ProtoHeader.SENSIBLE_ID_LEN);
+export function getGenesisTxid(script: Buffer) {
+    return script.subarray(script.length - GENESISTX_ID_OFFSET, script.length - GENESISTX_ID_OFFSET + ProtoHeader.GENESISTX_ID_LEN);
 }
 
 export function getGenesisHash(script: Buffer) {
-    return script.subarray(script.length - GENESIS_HASH_OFFSET, script.length - SENSIBLE_ID_OFFSET)
+    return script.subarray(script.length - GENESIS_HASH_OFFSET, script.length - GENESISTX_ID_OFFSET)
 }
 
 export function getTokenAddress(script: Buffer) {
@@ -71,11 +71,11 @@ export function getNewTokenScript(scriptBuf: Buffer, address: Buffer, tokenAmoun
     return newScript
 }
 
-export function getNewGenesisScript(scriptBuf: Buffer, sensibleID: Buffer) {
+export function getNewGenesisScript(scriptBuf: Buffer, genesisTxid: Buffer) {
     const newScript = Buffer.concat([
-        scriptBuf.subarray(0, scriptBuf.length - SENSIBLE_ID_OFFSET),
-        sensibleID,
-        scriptBuf.subarray(scriptBuf.length - SENSIBLE_ID_OFFSET + ProtoHeader.SENSIBLE_ID_LEN, scriptBuf.length)
+        scriptBuf.subarray(0, scriptBuf.length - GENESISTX_ID_OFFSET),
+        genesisTxid,
+        scriptBuf.subarray(scriptBuf.length - GENESISTX_ID_OFFSET + ProtoHeader.GENESISTX_ID_LEN, scriptBuf.length)
     ])
     return newScript
 }
