@@ -1,5 +1,5 @@
 import ProtoHeader = require('./protoheader')
-import { mvc } from 'mvc-scryptlib'
+import { mvc } from 'mvc-scrypt'
 
 export const PROTO_TYPE = 1
 export const PROTO_VERSION = 1

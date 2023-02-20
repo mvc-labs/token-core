@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { mvc, getPreimage, toHex, SigHashPreimage, signTx, PubKey, Sig, Bytes, Ripemd160, buildTypeClasses } from 'mvc-scryptlib';
+import { mvc, getPreimage, toHex, SigHashPreimage, signTx, PubKey, Sig, Bytes, Ripemd160, buildTypeClasses } from 'mvc-scrypt';
 import { inputSatoshis, dummyTxId } from '../../scrypt_helper';
 
 import { privateKey, privateKey2 } from '../../privateKey';
@@ -41,9 +41,8 @@ const Token = genContract('token/token', USE_DESC, USE_RELEASE)
 const TransferCheck = genContract('token/tokenTransferCheck', USE_DESC, USE_RELEASE)
 const UnlockContractCheck = genContract('token/tokenUnlockContractCheck', USE_DESC, USE_RELEASE)
 const TokenSell = genContract('token/tokenSell', false, false)
-const TxUtil = genContract('txUtil', false, false)
 
-const jsonDescr = Common.loadDescription('./fixture/autoGen/txUtil_desc.json');
+const jsonDescr = Common.loadDescription('./fixture/autoGen/token_desc.json');
 const { TxInputProof, TxOutputProof } = buildTypeClasses(jsonDescr);
 
 function initContractHash() {
@@ -192,10 +191,10 @@ function unlockTransferCheck(
 
         // get token merkle res
         const proof = Common.getTxOutputProof(tokenTx, tokenOutputIndexArray[i])
-        tokenTxHeaderArray = Buffer.concat([tokenTxHeaderArray, Buffer.from(proof.txHeader.toHex(), 'hex')])
-        const hashProofBuf = Buffer.from(proof.hashProof.toHex(), 'hex')
+        tokenTxHeaderArray = Buffer.concat([tokenTxHeaderArray, Buffer.from(proof.txHeader.serialize(), 'hex')])
+        const hashProofBuf = Buffer.from(proof.hashProof.serialize(), 'hex')
         tokenTxHashProofArray = Buffer.concat([tokenTxHashProofArray, Common.getUInt32Buf(hashProofBuf.length), hashProofBuf])
-        tokenTxSatoshisBytesArray = Buffer.concat([tokenTxSatoshisBytesArray, Buffer.from(proof.satoshiBytes.toHex(), 'hex')])
+        tokenTxSatoshisBytesArray = Buffer.concat([tokenTxSatoshisBytesArray, Buffer.from(proof.satoshiBytes.serialize(), 'hex')])
     }
 
     const tokenOutputSatoshis = tx.outputs[0].satoshis
@@ -262,10 +261,10 @@ function unlockContractCheck(
 
         // get token merkle res
         const proof = Common.getTxOutputProof(tokenTx, tokenTxOutputIndexArray[i])
-        tokenTxHeaderArray = Buffer.concat([tokenTxHeaderArray, Buffer.from(proof.txHeader.toHex(), 'hex')])
-        const hashProofBuf = Buffer.from(proof.hashProof.toHex(), 'hex')
+        tokenTxHeaderArray = Buffer.concat([tokenTxHeaderArray, Buffer.from(proof.txHeader.serialize(), 'hex')])
+        const hashProofBuf = Buffer.from(proof.hashProof.serialize(), 'hex')
         tokenTxHashProofArray = Buffer.concat([tokenTxHashProofArray, Common.getUInt32Buf(hashProofBuf.length), hashProofBuf])
-        tokenTxSatoshisBytesArray = Buffer.concat([tokenTxSatoshisBytesArray, Buffer.from(proof.satoshiBytes.toHex(), 'hex')])
+        tokenTxSatoshisBytesArray = Buffer.concat([tokenTxSatoshisBytesArray, Buffer.from(proof.satoshiBytes.serialize(), 'hex')])
     }
 
     let otherOutputArray = Buffer.alloc(0)
@@ -375,7 +374,7 @@ function verifyTokenTransfer(nTokenInputs: number, nTokenOutputs: number, nSatos
         addInput(tx, tokenTx.id, 0, token.lockingScript, inputSatoshis, prevouts)
     }
 
-    // add bsv input
+    // add mvc input
     for (let i = 0; i < nSatoshiInput; i++) {
         addInput(tx, dummyTxId, 0, mvc.Script.buildPublicKeyHashOut(address1), inputSatoshis, prevouts)
     }
@@ -418,7 +417,6 @@ function verifyTokenTransfer(nTokenInputs: number, nTokenOutputs: number, nSatos
     }
     const amountCheck = amountCheckRes.amountCheck 
     const amountCheckTx = amountCheckRes.amountCheckTx 
-    const amountCheckScriptData = amountCheckRes.amountCheckScriptData 
     addInput(tx, amountCheckTx.id, 0, amountCheck.lockingScript, inputSatoshis, prevouts)
 
     let amountCheckInputIndex = tx.inputs.length - 1
@@ -447,7 +445,7 @@ function verifyTokenTransfer(nTokenInputs: number, nTokenOutputs: number, nSatos
         }
         const pubKeyHex = toHex(privateKey.publicKey)
         const sigHex = toHex(signTx(tx, privateKey, tokenInstance[i].lockingScript, inputSatoshis, i, sigtype))
-        unlockTokenContract(tx, prevouts, tokenInstance[i], i, i, tokenTxs[i], 0, 0, prevTokenTxs[i], 0, amountCheckHashIndex, amountCheckInputIndex, amountCheckTx, 0, 0, '', 0, pubKeyHex, sigHex, TokenProto.OP_TRANSFER, tokenExpected)
+        unlockTokenContract(tx, prevouts, tokenInstance[i], i, i, tokenTxs[i], 0, 0, prevTokenTxs[i], 0, amountCheckHashIndex, amountCheckInputIndex, amountCheckTx, 0, 0, '', 0, pubKeyHex, sigHex, TokenProto.OP_TRANSFER, tokenExpected, options)
     }
 
     if (options.wrongTransferCheck !== true) {
@@ -476,13 +474,18 @@ function unlockTokenContract(
     pubKeyHex: string,
     sigHex: string,
     op: number, 
-    expected) {
+    expected,
+    options: any={}) {
     const preimage = getPreimage(tx, token.lockingScript, inputSatoshis, inputIndex, sigtype)
 
     const amountCheckScriptBuf = amountCheckTx.outputs[amountCheckOutputIndex].script.toBuffer()
     const amountCheckTxOutputProofInfo = new TxOutputProof(Common.getTxOutputProof(amountCheckTx, amountCheckOutputIndex))
     const inputRes = Common.getTxInputProof(tokenTx, prevTokenInputIndex)
-    const tokenTxInputProof = new TxInputProof(inputRes[0])
+    let tokenTxInputProof = new TxInputProof(inputRes[0])
+    if (options.wrongTxProof == true) {
+        const inputRes = Common.getTxInputProof(prevTokenTx, prevTokenInputIndex)
+        tokenTxInputProof = new TxInputProof(inputRes[0])
+    }
     const tokenTxHeader = inputRes[1]
     const prevTokenTxOutputProofInfo = new TxOutputProof(Common.getTxOutputProof(prevTokenTx, prevTokenOutputIndex))
     
@@ -763,7 +766,7 @@ describe('Test token contract unlock In Javascript', () => {
         verifyTokenTransfer(maxInputLimit, maxOutputLimit, 0, 0, options)
     });
 
-    it('t2: should succeed with bsv input', () => {
+    it('t2: should succeed with mvc input', () => {
         const options = {
             tokenExpected: true,
             checkExpected: true,
@@ -972,5 +975,7 @@ describe('Test token contract unlock In Javascript', () => {
         verifyTokenTransfer(1, 1, 0, 0, {wrongVersion: true, tokenExpected: false})
     })
 
-    // TODO: add test with wrong tx proof
+    it('t027: should failed when wrong tx proof', () => {
+        verifyTokenTransfer(1, 1, 0, 0, {wrongTxProof: true, tokenExpected: false})
+    })
 });

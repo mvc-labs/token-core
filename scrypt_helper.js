@@ -8,7 +8,7 @@ const {
   mvc,
   compile,
   compileContract: compileContractImpl
-} = require('mvc-scryptlib')
+} = require('mvc-scrypt')
 
 const { exit } = require('process');
 const minimist = require('minimist');
@@ -21,7 +21,7 @@ const Interpreter = mvc.Script.Interpreter
 const DataLen = 1
 
 const axios = require('axios')
-const API_PREFIX = 'https://api.whatsonchain.com/v1/bsv/test'
+const API_PREFIX = 'https://api.whatsonchain.com/v1/mvc/test'
 
 const inputIndex = 0
 const inputSatoshis = 100000

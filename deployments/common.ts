@@ -1,5 +1,5 @@
 
-import { mvc, buildContractClass, Bytes, ContractDescription } from 'mvc-scryptlib';
+import { mvc, buildContractClass, Bytes, ContractDescription } from 'mvc-scrypt';
 
 import { readFileSync, existsSync } from 'fs';
 import path = require('path');
@@ -151,15 +151,15 @@ export const addOutput = function (
 }
 
 export const createScriptTx = function (
-    bsvFeeTx: mvc.Transaction, 
-    bsvFeeOutputIndex: number, 
+    mvcFeeTx: mvc.Transaction, 
+    mvcFeeOutputIndex: number, 
     lockingScript, 
     outputSatoshis: number, 
     fee: number, 
     changeAddress: mvc.Address, 
     inputPrivKey: mvc.PrivateKey
     ) {
-    const output = bsvFeeTx.outputs[bsvFeeOutputIndex]
+    const output = mvcFeeTx.outputs[mvcFeeOutputIndex]
     const tx = new mvc.Transaction()
     tx.version = TX_VERSION
     tx.addInput(new mvc.Transaction.Input.PublicKeyHash({
@@ -167,8 +167,8 @@ export const createScriptTx = function (
             script: output.script,
             satoshis: output.satoshis
         }),
-        prevTxId: bsvFeeTx.id,
-        outputIndex: bsvFeeOutputIndex,
+        prevTxId: mvcFeeTx.id,
+        outputIndex: mvcFeeOutputIndex,
         script: mvc.Script.empty()
     }))
     const changeAmount = output.satoshis - fee - outputSatoshis

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { mvc, getPreimage, toHex, SigHashPreimage, signTx, PubKey, Sig, Bytes, Ripemd160, buildTypeClasses } from 'mvc-scryptlib';
+import { mvc, getPreimage, toHex, SigHashPreimage, signTx, PubKey, Sig, Bytes, Ripemd160, buildTypeClasses } from 'mvc-scrypt';
 import { inputSatoshis, dummyTxId } from '../../scrypt_helper';
 
 import { privateKey } from '../../privateKey';
@@ -16,9 +16,8 @@ const USE_DESC = false
 const USE_RELEASE = false
 const Genesis = genContract('token/tokenGenesis', USE_DESC, USE_RELEASE)
 const Token = genContract('token/token', USE_DESC, USE_RELEASE)
-const TxUtil = genContract('txUtil', false, false)
 
-const jsonDescr = Common.loadDescription('./fixture/autoGen/txUtil_desc.json');
+const jsonDescr = Common.loadDescription('./fixture/autoGen/token_desc.json');
 const { TxInputProof } = buildTypeClasses(jsonDescr);
 
 const issuerPrivKey = privateKey
@@ -137,7 +136,7 @@ function createToken(genesis, contractData: Buffer, options: any = {}) {
     // genesis
     addInput(tx, genesisTx.id, 0, genesis.lockingScript, inputSatoshis, prevouts)
 
-    // bsv
+    // mvc
     addInput(tx, dummyTxId, 0, mvc.Script.buildPublicKeyHashOut(issuerAddress), inputSatoshis, prevouts)
 
     // output

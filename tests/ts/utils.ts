@@ -1,6 +1,6 @@
 import ProtoHeader = require('../../deployments/protoheader');
 import Common = require('../../deployments/common')
-import { mvc } from 'mvc-scryptlib';
+import { mvc } from 'mvc-scrypt';
 import TokenProto = require('../../deployments/tokenProto');
 
 const tokenVersion = Common.getUInt32Buf(1)
