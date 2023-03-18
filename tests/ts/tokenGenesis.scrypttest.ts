@@ -17,8 +17,7 @@ const USE_RELEASE = false
 const Genesis = genContract('token/tokenGenesis', USE_DESC, USE_RELEASE)
 const Token = genContract('token/token', USE_DESC, USE_RELEASE)
 
-const jsonDescr = Common.loadDescription('./fixture/autoGen/token_desc.json');
-const { TxInputProof } = buildTypeClasses(jsonDescr);
+const { TxInputProof } = buildTypeClasses(Token);
 
 const issuerPrivKey = privateKey
 const issuerPubKey = privateKey.publicKey

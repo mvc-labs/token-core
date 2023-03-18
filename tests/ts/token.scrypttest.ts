@@ -42,8 +42,7 @@ const TransferCheck = genContract('token/tokenTransferCheck', USE_DESC, USE_RELE
 const UnlockContractCheck = genContract('token/tokenUnlockContractCheck', USE_DESC, USE_RELEASE)
 const TokenSell = genContract('token/tokenSell', false, false)
 
-const jsonDescr = Common.loadDescription('./fixture/autoGen/token_desc.json');
-const { TxInputProof, TxOutputProof } = buildTypeClasses(jsonDescr);
+const { TxInputProof, TxOutputProof } = buildTypeClasses(Token);
 
 function initContractHash() {
     const transferCheckCode = new TransferCheck()
