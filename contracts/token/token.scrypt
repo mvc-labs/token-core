@@ -96,7 +96,7 @@ contract Token {
         // backtrace to genesis
         bytes genesisTxid = TokenProto.getGenesisTxid(tokenScript, tokenScriptLen);
 
-        if (genesisTxid[:32] != hash256(prevTokenTxProof.txHeader)) {
+        if (genesisTxid != hash256(prevTokenTxProof.txHeader) + tokenTxInputProof.outputIndexBytes) {
             // backtrace to genesis contract
             bytes genesisHash = TokenProto.getGenesisHash(tokenScript, tokenScriptLen);
             bool backtraceGenesis = (genesisHash == ripemd160(prevTokenTxProof.scriptHash));

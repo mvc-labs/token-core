@@ -42,7 +42,7 @@ const TransferCheck = genContract('token/tokenTransferCheck', USE_DESC, USE_RELE
 const UnlockContractCheck = genContract('token/tokenUnlockContractCheck', USE_DESC, USE_RELEASE)
 const TokenSell = genContract('token/tokenSell', false, false)
 
-const { TxInputProof, TxOutputProof } = buildTypeClasses(Token);
+const { TxInputProof, TxOutputProof } = buildTypeClasses(Token)
 
 function initContractHash() {
     const transferCheckCode = new TransferCheck()
@@ -496,8 +496,10 @@ function unlockTokenContract(
     let prevTokenAddress = new Bytes('')
     let prevTokenAmount = BigInt(0)
     const scriptBuf = prevTokenTx.outputs[prevTokenOutputIndex].script.toBuffer()
-    prevTokenAddress = new Bytes(TokenProto.getTokenAddress(scriptBuf).toString('hex'))
-    prevTokenAmount = TokenProto.getTokenAmount(scriptBuf)
+    if (scriptBuf.length > TokenProto.DATA_LEN) {
+        prevTokenAddress = new Bytes(TokenProto.getTokenAddress(scriptBuf).toString('hex'))
+        prevTokenAmount = TokenProto.getTokenAmount(scriptBuf)
+    }
 
     const txContext = {
         tx: tx,
@@ -747,6 +749,64 @@ function unlockFromGenesis(options: any = {}) {
     unlockTokenContract(tx, prevouts, token, 0, 0, genesisTx, 1, 0, prevGenesisTx, 0, amountCheckHashIndex, amountCheckInputIndex, amountCheckTx, 0, 0, '', 0, pubKeyHex, sigHex, TokenProto.OP_TRANSFER, options.expected)
 }
 
+function unlockFromFakeGenesis(options: any = {}) {
+    const genesis = Utils.createGenesisContract(Genesis, issuerAddress, Buffer.alloc(36, 0))
+
+    const genesisScript = genesis.lockingScript.toBuffer()
+
+    let prevGenesisTx = new mvc.Transaction()
+    prevGenesisTx.version = Common.TX_VERSION
+    addInput(prevGenesisTx, dummyTxId, 0, mvc.Script.buildPublicKeyHashOut(address1), inputSatoshis, [])
+    addOutput(prevGenesisTx, genesisScript, inputSatoshis)
+    // add fake genesis
+    addOutput(prevGenesisTx, mvc.Script.buildPublicKeyHashOut(address1), inputSatoshis - 1000)
+
+    // create genesisTx
+    let genesisTx = new mvc.Transaction()
+    genesisTx.version = Common.TX_VERSION
+    // use fake genesisTxid
+    addInput(genesisTx, prevGenesisTx.id, 1, mvc.Script.buildPublicKeyHashOut(address1), inputSatoshis - 1000, [])
+
+    // create genesis output
+    const genesisTxid = Common.genGenesisTxid(prevGenesisTx.id, 0)
+    const newGenesisScript = TokenProto.getNewGenesisScript(genesisScript, Buffer.from(genesisTxid, 'hex'))
+    addOutput(genesisTx, mvc.Script.fromBuffer(newGenesisScript), inputSatoshis)
+
+    const tokenAmount = BigInt(10000)
+    let genesisHash = Common.getScriptHashBuf(newGenesisScript)
+    if (options.wrongGenesisHash) {
+        genesisHash = Buffer.alloc(20, 0)
+    }
+
+    // create token output
+    const token = Utils.createTokenContract(Token, address1.hashBuffer, tokenAmount, genesisHash, Buffer.from(genesisTxid, 'hex'), transferCheckCodeHashArray, unlockContractCodeHashArray)
+    addOutput(genesisTx, token.lockingScript, inputSatoshis)
+
+    const tokenID = TokenProto.getTokenID(token.lockingScript.toBuffer())
+
+    let tx = new mvc.Transaction()
+    tx.version = Common.TX_VERSION
+    let prevouts: any = []
+
+    addInput(tx, genesisTx.id, 1, token.lockingScript, inputSatoshis, prevouts)
+
+    const {amountCheck, amountCheckTx, amountCheckScriptData} = createTransferCheckContract(1, 1, [tokenAmount], tokenID, tokenCodeHash)
+
+    addInput(tx, amountCheckTx.id, 0, amountCheck.lockingScript, inputSatoshis, prevouts)
+
+    prevouts = Buffer.concat(prevouts)
+
+    addOutput(tx, token.lockingScript, inputSatoshis)
+
+    const amountCheckInputIndex = 1
+    let pubKeyHex = toHex(privateKey.publicKey)
+    let sigHex = toHex(signTx(tx, privateKey, token.lockingScript, inputSatoshis, 0, sigtype))
+
+    // unlock by genesisTxid
+    unlockTokenContract(tx, prevouts, token, 0, 0, genesisTx, 1, 0, prevGenesisTx, 1, amountCheckHashIndex, amountCheckInputIndex, amountCheckTx, 0, 0, '', 0, pubKeyHex, sigHex, TokenProto.OP_TRANSFER, options.expected)
+
+}
+
 describe('Test token contract unlock In Javascript', () => {
     before(() => {
         initContractHash()
@@ -976,5 +1036,9 @@ describe('Test token contract unlock In Javascript', () => {
 
     it('t027: should failed when wrong tx proof', () => {
         verifyTokenTransfer(1, 1, 0, 0, {wrongTxProof: true, tokenExpected: false})
+    })
+
+    it('t028: should failed when fake genesisTxid', () => {
+        unlockFromFakeGenesis({expected: false})
     })
 });
